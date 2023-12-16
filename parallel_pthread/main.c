@@ -99,6 +99,7 @@ load_image_data(Color4 *output, Image *image)
                 ++output_pixel;
             }
         }
+        stbi_image_free(input_pixels);
     }
     else
     {
