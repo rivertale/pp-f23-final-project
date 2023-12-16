@@ -111,18 +111,21 @@ write_image(char *path, Color4 *bitmap, int width, int height)
 }
 
 
-void AllocateRandomClusters(Color4 * centroid, short clustercount)
+void AllocateRandomClusters(Color4 * centroid, Color4 * pixels, short clustercount)
 {
   printf("Initial randomized cluster centres: \n\n");
   // Initializing clusters
-  srand(time(NULL)); 
+  //srand(time(NULL)); 
   for(int i = 0; i < clustercount; i++)
   {
-
-    centroid[i].r = rand()%256;
+    centroid[i].r = pixels[i].r;
+    centroid[i].g = pixels[i].g;
+    centroid[i].b = pixels[i].b;
+    centroid[i].a = pixels[i].a;
+    /*centroid[i].r = rand()%256;
     centroid[i].g = rand()%256;
     centroid[i].b = rand()%256;
-    centroid[i].a = rand()%256;
+    centroid[i].a = rand()%256;*/
     /*printf("%d, ", centroid[i].r);
     printf("%d, ", centroid[i].g);
     printf("%d, ", centroid[i].b);
@@ -202,52 +205,40 @@ void update_centroid(Color4 * centroid, int * label, Color4 * pixels, int  clust
     free(label_count);
 }
 
-void output_result(int * label, Color4 * output,int cluster_count, int total_pixel){
-
-    //init color
-    Color4 * color = (Color4 *) malloc(cluster_count * sizeof(Color4));
-    srand(time(NULL)); 
-    for(int i = 0; i < cluster_count; i++)
-    {
-        color[i].r = rand()%256;
-        color[i].g = rand()%256;
-        color[i].b = rand()%256;
-        color[i].r = rand()%256;
-    }
+void output_result(int * label, Color4 * output, Color4 * centroid, int cluster_count, int total_pixel){
 
     for(int i = 0; i < total_pixel; i++)
     {   
-        output[i].r = color[label[i]].r;
-        output[i].g = color[label[i]].g;
-        output[i].b = color[label[i]].b;
-        output[i].a = color[label[i]].a;
+        output[i].r = centroid[label[i]].r;
+        output[i].g = centroid[label[i]].g;
+        output[i].b = centroid[label[i]].b;
+        output[i].a = centroid[label[i]].a;
     }
-
-    free(color);
 }
 
 static void 
 Kmean(Color4 *output, Color4 *pixels, int width, int height, 
                          int cluster_count, int max_iteration, float migration_threshold,
                          int *out_iteration)
-{
+{   
+    printf("%d\n",cluster_count);
     int pixel_count = width * height;
     Color4 *centroid = (Color4 *) malloc(cluster_count * sizeof(Color4));
     int* label = (int*) malloc(pixel_count * sizeof(int));
 
-    AllocateRandomClusters(centroid, cluster_count);
+    AllocateRandomClusters(centroid, pixels, cluster_count);
 
     for(int i = 0; i < max_iteration; i++)
     {   
-        out_iteration++;
+        printf("%d\n",i);
         printf("classify_points\n");
         classify_points(centroid, label, pixels, cluster_count, pixel_count);
         printf("update_centroid\n");
         update_centroid(centroid, label, pixels, cluster_count, pixel_count);
         
     }
-    output_result(label, output, cluster_count, pixel_count);
-    
+    output_result(label, output, centroid, cluster_count, pixel_count);
+    *out_iteration = max_iteration;
     free(label);
     free(centroid);
 }
