@@ -169,7 +169,7 @@ do_next_work(WorkQueue *queue)
         if(index == current_entry_to_read)
         {
             entry.callback(entry.data);
-            ++queue->completion_count;
+            atomic_add(&queue->completion_count, 1);
         }
     }
     return result;
