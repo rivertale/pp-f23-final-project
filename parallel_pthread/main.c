@@ -232,7 +232,7 @@ filter_bitmap_with_kmean(Color4 *output, Color4 *pixels, int width, int height,
             
             int max_migration = migration_threshold * pixel_count;
             int iteration = 0;
-            for(; iteration < max_iteration; ++iteration)
+            while(iteration++ < max_iteration)
             {
                 for(int thread_index = 0; thread_index < thread_count; ++thread_index)
                 {
