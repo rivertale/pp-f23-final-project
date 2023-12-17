@@ -255,9 +255,13 @@ filter_bitmap_with_kmean(Color4 *output, Color4 *pixels, int width, int height,
                         b_sum += work->out_cluster_sums_b[cluster_index];
                         count += work->out_cluster_pixel_counts[cluster_index];
                     }
-                    cluster_colors[cluster_index].r = r_sum / count;
-                    cluster_colors[cluster_index].g = g_sum / count;
-                    cluster_colors[cluster_index].b = b_sum / count;
+                    
+                    if(count > 0)
+                    {
+                        cluster_colors[cluster_index].r = r_sum / count;
+                        cluster_colors[cluster_index].g = g_sum / count;
+                        cluster_colors[cluster_index].b = b_sum / count;
+                    }
                 }
                 
                 int total_migration_count = 0;
