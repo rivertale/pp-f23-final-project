@@ -111,10 +111,10 @@ write_image(char *path, Color4 *bitmap, int width, int height)
     return result;
 }
 
-void AllocateRandomClusters(Color4 * centroid, Color4 * pixels, short clustercount)
+void AllocateRandomClusters(Color4 * centroid, Color4 * pixels, short clustercount, int thread_count)
 {
     printf("Initial randomized cluster centres: \n\n");
-
+    omp_set_num_threads(thread_count);
     #pragma omp parallel for
     for(int i = 0; i < clustercount; i++)
     {   
@@ -127,9 +127,11 @@ void AllocateRandomClusters(Color4 * centroid, Color4 * pixels, short clustercou
 
 }
 
-void classify_points(Color4 * centroid, int * label, Color4 * pixels, int  cluster_count, int total_pixel){
-
-    #pragma omp parallel for
+void classify_points(Color4 *centroid, int *pre_label, int *label, Color4 *pixels, int *migration_count, int cluster_count, int total_pixel,int thread_count)
+{   
+    int count = 0;
+    omp_set_num_threads(thread_count);
+    #pragma omp parallel for reduction(+:count)
     for(int i = 0; i < total_pixel; i++)
     {   
         int index = -1;
@@ -146,16 +148,20 @@ void classify_points(Color4 * centroid, int * label, Color4 * pixels, int  clust
                 min_dist = dist;
             }   
         }
+        if(index != pre_label[i])
+            count++;
         label[i] = index;
     }
+    *migration_count = count;
+    //printf("%d",count);
 }
 
-void update_centroid(Color4 * centroid, int * label, Color4 * pixels, int  cluster_count, int total_pixel){
+void update_centroid(Color4 * centroid, int * label, Color4 * pixels, int  cluster_count, int total_pixel, int thread_count){
     
     Color4_SUM * label_sum = (Color4_SUM*) calloc(cluster_count , sizeof(Color4_SUM));
     int* label_count = (int*) calloc(cluster_count , sizeof(int));
 
- 
+    omp_set_num_threads(thread_count);
     #pragma omp parallel for reduction(+:label_count[:cluster_count])
     for(int i = 0; i < total_pixel; i++)
     {   
@@ -189,7 +195,8 @@ void update_centroid(Color4 * centroid, int * label, Color4 * pixels, int  clust
     free(label_count);
 }
 
-void output_result(int * label, Color4 * output, Color4 * centroid, int cluster_count, int total_pixel){
+void output_result(int * label, Color4 * output, Color4 * centroid, int cluster_count, int total_pixel,int thread_count){
+    omp_set_num_threads(thread_count);
     #pragma omp parallel
     {
         #pragma omp for 
@@ -206,31 +213,41 @@ void output_result(int * label, Color4 * output, Color4 * centroid, int cluster_
 static void 
 Kmean(Color4 *output, Color4 *pixels, int width, int height, 
                          int cluster_count, int max_iteration, float migration_threshold,
-                         int *out_iteration)
+                         int *out_iteration,int thread_count)
 {   
     
     int pixel_count = width * height;
     Color4 *centroid = (Color4 *) malloc(cluster_count * sizeof(Color4));
     int* label = (int*) malloc(pixel_count * sizeof(int));
+    int *previous_label = (int *)calloc(pixel_count, sizeof(int));
 
-    AllocateRandomClusters(centroid, pixels, cluster_count);
+    AllocateRandomClusters(centroid, pixels, cluster_count, thread_count);
 
+    int migration_count;
     for(int i = 0; i < max_iteration; i++)
     {   
-        
-        classify_points(centroid, label, pixels, cluster_count, pixel_count);
+        migration_count = 0;
+        classify_points(centroid, previous_label, label, pixels, &migration_count, cluster_count, pixel_count, thread_count);
         //Check threshold
-        update_centroid(centroid, label, pixels, cluster_count, pixel_count);
+        if (migration_count / (float)pixel_count < migration_threshold)
+        {
+            *out_iteration = i;
+            break;
+        }
+        memcpy(previous_label, label, pixel_count * sizeof(int));
+        update_centroid(centroid, label, pixels, cluster_count, pixel_count, thread_count);
         
     }
-    output_result(label, output, centroid, cluster_count, pixel_count);
-    *out_iteration = max_iteration;
+    output_result(label, output, centroid, cluster_count, pixel_count, thread_count);
+    
     free(label);
+    free(previous_label);
     free(centroid);
 }
 
 int main(int arg_count, char **args)
-{
+{   
+    int thread_count = 4;
     int parsing_arg_index = 1;
     int show_usage = 0;
     int verbose = 1;
@@ -251,6 +268,10 @@ int main(int arg_count, char **args)
         {
             max_iteration = atoi(option + 3);
         }
+        else if(option[1] == 't' && option[2] == '=')
+        {
+            thread_count = atoi(option + 3);
+        }
         else if(option[1] == 'r' && option[2] == '=')
         {
             migration_threshold = atof(option + 3);
@@ -268,13 +289,14 @@ int main(int arg_count, char **args)
             printf("unknown option '%s'\n", option);
         }
     }
-    
+    printf("%d/n",thread_count);
     if(show_usage || (parsing_arg_index + 2 != arg_count))
     {
         char *usage = "usage: kmean [option] ... input_path output_path\n"
                       "options:\n"
                       "    -n={cluster_count}  number of clusters (default is 4)\n"
                       "    -m={max_iteration}  max iteration of kmean clustering (default is 200)\n"
+                      "    -t={thread_count}   number of used threads (default is the number of logical core)\n"
                       "    -r={threshold}      exit when the data point migration ratio between clusters exceeds this value (default is 0.01)\n"
                       "    -q                  quiet mode (no output)\n"
                       "    -h                  print this help information\n";
@@ -306,7 +328,7 @@ int main(int arg_count, char **args)
                 unsigned long long start_time = get_microsecond_from_epoch();
                 Kmean(output, input, image.width, image.height, 
                                          cluster_count, max_iteration, migration_threshold,  
-                                         &used_iteration);
+                                         &used_iteration, thread_count);
                 unsigned long long end_time = get_microsecond_from_epoch();
                 if(verbose)
                 {
