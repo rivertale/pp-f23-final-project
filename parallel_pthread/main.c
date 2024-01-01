@@ -186,6 +186,38 @@ do_fill_image_work(void *param)
 }
 
 static void 
+allocate_random_clusters(Color4 *pixels, int pixel_count, Color4 *cluster_colors, int cluster_count)
+{
+    for(int i = 0; i < cluster_count; ++i)
+    {
+        cluster_colors[i] = pixels[0];
+    }
+    
+    int unique_color_count = 0;
+    for(int i = 0; i < pixel_count; ++i)
+    {
+        int is_unique = 1;
+        for(int j = 0; j < unique_color_count; ++j)
+        {
+            if(pixels[i].r == cluster_colors[j].r && 
+               pixels[i].g == cluster_colors[j].g && 
+               pixels[i].b == cluster_colors[j].b)
+            {
+                is_unique = 0;
+                break;
+            }
+        }
+        
+        if(is_unique)
+        {
+            cluster_colors[unique_color_count++] = pixels[i];
+        }
+        
+        if(unique_color_count == cluster_count) break;
+    }
+}
+
+static void 
 filter_bitmap_with_kmean(Color4 *output, Color4 *pixels, int width, int height, 
                          int cluster_count, int max_iteration, float migration_threshold, 
                          WorkQueue *queue, int thread_count, 
@@ -205,10 +237,7 @@ filter_bitmap_with_kmean(Color4 *output, Color4 *pixels, int width, int height,
         {
             clear_memory(working_memory, thread_count * working_size_per_thread + 128);
             clear_memory(cluster_indices, pixel_count * sizeof(int));
-            for(int i = 0; i < cluster_count; ++i)
-            {
-                cluster_colors[i] = pixels[i];
-            }
+            allocate_random_clusters(pixels, pixel_count, cluster_colors, cluster_count);
             
             char *initial_ptr_to_allocate = (char *)align_to((size_t)working_memory, 128);
             char *ptr_to_allocate = initial_ptr_to_allocate;
