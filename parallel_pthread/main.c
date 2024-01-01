@@ -370,8 +370,6 @@ main(int arg_count, char **args)
        (output_path[output_path_len-1] == 'g' || output_path[output_path_len-1] == 'G'))
     {
         Image image;
-        WorkQueue work_queue;
-        create_work_queue(&work_queue, thread_count - 1);
         if(load_image_info(&image, input_path))
         {
             Color4 *input = (Color4 *)malloc(image.width * image.height * sizeof(Color4));
@@ -381,6 +379,8 @@ main(int arg_count, char **args)
                 load_image_data(input, &image);
                 int used_iteration;
                 unsigned long long start_time = get_microsecond_from_epoch();
+                WorkQueue work_queue;
+                create_work_queue(&work_queue, thread_count - 1);
                 filter_bitmap_with_kmean(output, input, image.width, image.height, 
                                          cluster_count, max_iteration, migration_threshold, 
                                          &work_queue, thread_count, 
