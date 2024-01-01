@@ -132,7 +132,7 @@ void AllocateRandomClusters(Color4 *centroid, Color4 *pixels, short clustercount
     }
 }
 
-void classify_points(Color4 *centroid, int *pre_label, int *label, Color4 *pixels, int *migration_count, int cluster_count, int total_pixel)
+void classify_points(Color4 *centroid, int *label, Color4 *pixels, int *migration_count, int cluster_count, int total_pixel)
 {
 
     for (int i = 0; i < total_pixel; i++)
@@ -155,7 +155,7 @@ void classify_points(Color4 *centroid, int *pre_label, int *label, Color4 *pixel
             }
         }
         // printf("%d\n",index);
-        if (index != pre_label[i])
+        if (index != label[i])
             (*migration_count)++;
         label[i] = index;
     }
@@ -228,7 +228,6 @@ Kmean(Color4 *output, Color4 *pixels, int width, int height,
     int pixel_count = width * height;
     Color4 *centroid = (Color4 *)malloc(cluster_count * sizeof(Color4));
     int *label = (int *)malloc(pixel_count * sizeof(int));
-    int *previous_label = (int *)calloc(pixel_count, sizeof(int));
 
     AllocateRandomClusters(centroid, pixels, cluster_count);
 
@@ -239,7 +238,7 @@ Kmean(Color4 *output, Color4 *pixels, int width, int height,
         migration_count = 0;
 
         printf("classify_points\n");
-        classify_points(centroid, previous_label, label, pixels, &migration_count, cluster_count, pixel_count);
+        classify_points(centroid, label, pixels, &migration_count, cluster_count, pixel_count);
         printf("update_centroid\n");
         update_centroid(centroid, label, pixels, cluster_count, pixel_count);
 
@@ -248,13 +247,11 @@ Kmean(Color4 *output, Color4 *pixels, int width, int height,
             *out_iteration = i;
             break;
         }
-        memcpy(previous_label, label, pixel_count * sizeof(int));
     }
     printf("out_iteration: %d\n", *out_iteration);
     output_result(label, output, centroid, cluster_count, pixel_count);
 
     free(label);
-    free(previous_label);
     free(centroid);
 }
 
