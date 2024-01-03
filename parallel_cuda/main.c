@@ -94,26 +94,34 @@ write_image(char *path, Color4 *bitmap, int width, int height)
     return result;
 }
 
-void AllocateRandomClusters(Color4 *centroid, Color4 *pixels, short clustercount)
+void AllocateRandomClusters(Color4 *centroid, Color4 *pixels, int pixel_count, short clustercount)
 {
-    printf("Initial randomized cluster centres: \n\n");
-    // Initializing clusters
-    // srand(time(NULL));
-    for (int i = 0; i < clustercount; i++)
+    for(int i = 0; i < clustercount; ++i)
     {
-        centroid[i].r = pixels[i].r;
-        centroid[i].g = pixels[i].g;
-        centroid[i].b = pixels[i].b;
-        centroid[i].a = pixels[i].a;
-        /*centroid[i].r = rand() % 256;
-        centroid[i].g = rand() % 256;
-        centroid[i].b = rand() % 256;
-        centroid[i].a = rand() % 256;
-        printf("%d, ", centroid[i].r);
-        printf("%d, ", centroid[i].g);
-        printf("%d, ", centroid[i].b);
-        printf("%d, ", centroid[i].a);
-        printf("\n");*/
+        centroid[i] = pixels[0];
+    }
+    
+    int unique_color_count = 0;
+    for(int i = 0; i < pixel_count; ++i)
+    {
+        int is_unique = 1;
+        for(int j = 0; j < unique_color_count; ++j)
+        {
+            if(pixels[i].r == centroid[j].r && 
+               pixels[i].g == centroid[j].g && 
+               pixels[i].b == centroid[j].b)
+            {
+                is_unique = 0;
+                break;
+            }
+        }
+        
+        if(is_unique)
+        {
+            centroid[unique_color_count++] = pixels[i];
+        }
+        
+        if(unique_color_count == clustercount) break;
     }
 }
 
@@ -125,7 +133,7 @@ void output_result(int *label, Color4 *output, Color4 *centroid, int cluster_cou
         output[i].r = centroid[label[i]].r;
         output[i].g = centroid[label[i]].g;
         output[i].b = centroid[label[i]].b;
-        output[i].a = centroid[label[i]].a;
+        //output[i].a = centroid[label[i]].a;
     }
 }
 
@@ -137,11 +145,10 @@ Kmean(Color4 *output, Color4 *pixels, int width, int height,
     int pixel_count = width * height;
     Color4 *centroid = (Color4 *)malloc(cluster_count * sizeof(Color4));
     int *label = (int *)malloc(pixel_count * sizeof(int));
-    /*int *previous_label = (int *)malloc(pixel_count * sizeof(int));
-    for(int i = 0; i < pixel_count; i++)
-        previous_label[i] = -1;*/
+    Color4_SUM *label_sum = (Color4_SUM *)malloc(cluster_count * sizeof(Color4_SUM));
+    int *label_count = (int *)malloc(cluster_count * sizeof(int));
 
-    AllocateRandomClusters(centroid, pixels, cluster_count);
+    AllocateRandomClusters(centroid, pixels, pixel_count, cluster_count);
 
     int migration_count;
     int i = 0;
@@ -149,10 +156,9 @@ Kmean(Color4 *output, Color4 *pixels, int width, int height,
     {
         migration_count = 0;
 
-        printf("classify_points\n");
-        host_classify_points(centroid, label, pixels, &migration_count, cluster_count, pixel_count);
-        printf("update_centroid\n");
-        host_update_centroid(centroid, label, pixels, cluster_count, pixel_count);
+        //host_classify_points(centroid, label, pixels, &migration_count, cluster_count, pixel_count);
+        //host_update_centroid(centroid, label, label_sum, label_count, pixels, cluster_count, pixel_count);
+        host_classfy_updateCentroid(centroid, label, label_sum, label_count, pixels, &migration_count, cluster_count, pixel_count);
 
         if (migration_count / (float)pixel_count < migration_threshold)
         {
@@ -161,12 +167,14 @@ Kmean(Color4 *output, Color4 *pixels, int width, int height,
         }
         //memcpy(previous_label, label, pixel_count * sizeof(int));
     }
-    printf("out_iteration: %d\n", *out_iteration);
+    //printf("out_iteration: %d\n", *out_iteration);
     output_result(label, output, centroid, cluster_count, pixel_count);
 
     free(label);
     //free(previous_label);
     free(centroid);
+    free(label_sum);
+    free(label_count);
 }
 
 int main(int arg_count, char **args)
@@ -238,23 +246,30 @@ int main(int arg_count, char **args)
     {
         Image image;
         if (load_image_info(&image, input_path))
-        {
+        {   
+            printf("%d %d\n", image.width, image.height);
             Color4 *input = (Color4 *)malloc(image.width * image.height * sizeof(Color4));
             Color4 *output = (Color4 *)malloc(image.width * image.height * sizeof(Color4));
             if (input && output)
             {
                 load_image_data(input, &image);
                 int used_iteration;
-                unsigned long long start_time = get_microsecond_from_epoch();
-                Kmean(output, input, image.width, image.height,
-                      cluster_count, max_iteration, migration_threshold,
-                      &used_iteration);
-                unsigned long long end_time = get_microsecond_from_epoch();
+
+                unsigned long long total_time = 0;
+                for(int i = 0; i < 10; i++){
+                    unsigned long long start_time = get_microsecond_from_epoch();
+                    Kmean(output, input, image.width, image.height,
+                        cluster_count, max_iteration, migration_threshold,
+                        &used_iteration);
+                    unsigned long long end_time = get_microsecond_from_epoch();
+                    total_time += (end_time - start_time);
+                }
+
                 if (verbose)
                 {
                     printf("[summary]\n");
                     printf("    used iteration = %d\n", used_iteration);
-                    printf("    time = %fs\n", (end_time - start_time) / 1000000.0f);
+                    printf("    time = %fs\n", total_time / 10000000.0f);
                 }
 
                 if (write_image(output_path, output, image.width, image.height))

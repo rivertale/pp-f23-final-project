@@ -24,6 +24,9 @@ typedef struct Image
 void host_classify_points(Color4 *centroid, int *label, Color4 *pixels, int *migration_count, 
                         int cluster_count, int total_pixel);
 
-void host_update_centroid(Color4 *centroid, int *label, Color4 *pixels, int cluster_count, int total_pixel);
+void host_update_centroid(Color4 *centroid, int *label, Color4_SUM* label_sum, int* label_count, Color4 *pixels, int cluster_count, int total_pixel);
+
+void host_classfy_updateCentroid(Color4 *centroid, int *label, Color4_SUM* label_sum, int* label_count, Color4 *pixels, int *migration_count, 
+                        int cluster_count, int total_pixel);
 
 #endif /* KERNEL_H_ */
