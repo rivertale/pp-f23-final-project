@@ -4,9 +4,9 @@
 Accelerating K-Means Clustering with Parallelization
 
 ## Member
-Chen, Kuan-Sheng
-Chu, Li-Min
-Fang, Jia-Xien
+311554014 陳冠昇 
+312551114 朱立民 
+312551096 方嘉賢 
 
 ## How to run the code
 **Serial**
