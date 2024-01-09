@@ -1,9 +1,9 @@
 # pp-f23-final-project
 
-## Title:
+## Title
 Accelerating K-Means Clustering with Parallelization
 
-## Author:
+## Member
 Chen, Kuan-Sheng
 Chu, Li-Min
 Fang, Jia-Xien
@@ -187,3 +187,12 @@ https://doi.org/10.1109/TPAMI.2002.1017616
 Efficient Estimation of the Number of Clusters. In Proceedings of the Seventeenth
 International Conference on Machine Learning (ICML ’00). Morgan Kaufmann
 Publishers Inc., San Francisco, CA, USA, 727–734.
+
+## Contributions of each member
+
+311554014 陳冠昇: Serial、OpenMP實作、投影片製作
+
+312551114 朱立民: Cuda 實作、投影片製作
+
+312551096 方嘉賢: pthread實作、投影片製作
+
