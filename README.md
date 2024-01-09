@@ -28,6 +28,11 @@ make
 ```
 
 **Cuda**
+```c=1
+cd parallel_cuda/
+make
+./KMeans input_image_path output_image_path
+```
 
 **Some of option**
 
