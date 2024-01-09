@@ -8,6 +8,39 @@ Chen, Kuan-Sheng
 Chu, Li-Min
 Fang, Jia-Xien
 
+## How to run the code
+**Serial**
+```c=1
+cd sequential/
+make
+cd build/
+./kmeans input_image_path output_image_path
+```
+
+**Pthread**
+
+
+**OpenMP**
+```c=1
+cd parallel_openmp/
+make
+./openMP input_image_path output_image_path
+```
+
+**Cuda**
+
+**Some of option**
+
+    -n number of clusters (default is 4)
+
+    -m max iteration of kmean clustering (default is 200)
+
+    -r exit when the data point migration ratio between clusters exceeds this value (default is 0.01)
+
+    -q quiet mode (no output)
+
+    -h print this help information
+
 ## Abstract
 In this project, our goal is to enhance the computational speed of the image K-Means clustering algorithm through parallelization methods. By adopting three different parallelization approaches, namely Pthread, OpenMP, and CUDA, we have successfully achieved a significantly improved computational efficiency for the K-Means clustering algorithm compared to the serial version. The experimental results clearly indicate a substantial speed boost in the CUDA version when handling substantial computations. On the other hand, Pthread and OpenMP, while showing comparable performance improvements, both outperform the serial version.
 
