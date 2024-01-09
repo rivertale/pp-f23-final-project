@@ -1,9 +1,6 @@
 CC = gcc
 
-all: main openMP
-
-main: 
-	${CC} main.c -o main -lm
+all: openMP
 
 openMP:
 	${CC} -fopenmp openMP.c -o openMP -lm
