@@ -18,6 +18,11 @@ cd build/
 ```
 
 **Pthread**
+```c=1
+cd parallel_pthread/
+make
+./kmeans input_image_path output_image_path
+```
 
 
 **OpenMP**
@@ -47,11 +52,11 @@ make
     -h print this help information
 
 ## Abstract
-In this project, our goal is to enhance the computational speed of the image K-Means clustering algorithm through parallelization methods. By adopting three different parallelization approaches, namely Pthread, OpenMP, and CUDA, we have successfully achieved a significantly improved computational efficiency for the K-Means clustering algorithm compared to the serial version. The experimental results clearly indicate a substantial speed boost in the CUDA version when handling substantial computations. On the other hand, Pthread and OpenMP, while showing comparable performance improvements, both outperform the serial version.
+In this project, our goal is to enhance the computational speed of the image K-Means clustering algorithm through parallelization methods. By adopting three different parallelization approaches, namely Pthread, OpenMP, and CUDA, we have successfully achieved a significantly improved computational efficiency for the K-Means clustering algorithm compared to the serial version. The experimental results indicate a substantial speed boost in the CUDA version when handling substantial computations. On the other hand, Pthread and OpenMP, while showing comparable performance improvements, both outperform the serial version.
 
-Key Words: K-Means, Clustering, Machine Learning , Pthread, OpenMP, Cuda
+Key Words: K-Means, Clustering, Machine Learning, Pthread, OpenMP, Cuda
 
-## Itroduction
+## Introduction
 K-Means clustering is a crucial method in the fields of machine learning and data analysis. It effectively groups data into similar clusters, revealing patterns and structures within the data. This clustering method is not only helpful in uncovering underlying data structures and trends but also finds extensive applications in areas such as image segmentation, anomaly detection, and data compression. Through K-Means clustering, we gain deeper insights into the similarities and differences within a dataset, providing a foundation for subsequent analysis and decision-making.
 
 The motivation behind this project lies in optimizing the computational efficiency of K-Means clustering through parallel computing methods to enhance processing speed. As the volume of data continues to increase, traditional K-Means algorithms can become computationally intensive. Therefore, accelerating K-Means execution through parallelization aids in improving analysis efficiency and addressing challenges posed by larger datasets. This optimization holds significant value for real-time applications, resource maximization, and faster cluster analysis.
@@ -72,7 +77,7 @@ Our serial approach divides the K-Means clustering algorithm into 4 steps, Figur
 <img  width="256" src="https://i.imgur.com/hoG9ufI.png" title="source: imgur.com" />
 
 1. Initialize cluster centroids
-Select K initial cluster centroids.To ensure consistency, we use the first K distinct pixel values in the image as the initial centroids for K-Means.
+Select K initial cluster centroids. To ensure consistency, we use the first K distinct pixel values in the image as the initial centroids for K-Means.
 2. Classify points
 Assign each pixel value to the nearest cluster center, forming K clusters. When calculating distances, employ the Euclidean distance.
 3. Update centroids
@@ -81,9 +86,9 @@ Update the centroid of each cluster by averaging the pixels within the same clus
 To avoid excessive execution times, the loop is exited when the overall pixel change falls below our predefined threshold indicating convergence.
 
 
-**Pthread**
+**pthread**
 
-Figure below gives an overview of our Pthread implementation and shows how it parallelizes the steps in the serial approach. The main parts being parallelized are the three states: classifying points, updating centroids, and checking cluster switching proportion.
+The figure below gives an overview of our Pthread implementation and shows how it parallelizes the steps in the serial approach. The main parts being parallelized are the three states: classifying points, updating centroids, and checking cluster switching proportion.
 
 <img width="256" src="https://i.imgur.com/Xzwjv20.png" title="source: imgur.com" />
 
@@ -95,27 +100,27 @@ It is crucial to note that local centroids are updated frequently with every pix
 
 In the implementation of OpenMP parallelization, we parallelize three key parts of the algorithm. 
 
-Firstly, in the "Classify points" section, we need to calculate the shortest Euclidean distance between all pixel values and cluster centers, and record to which cluster each pixel belongs. As each pixel's calculation is independent, we can utilize **#pragma omp** for to achieve parallelization. 
+Firstly, in the "Classify points" section, we need to calculate the shortest Euclidean distance between all pixel values and cluster centers, and record to which cluster each pixel belongs. As each pixel's calculation is independent, we can utilize **#pragma omp for** to achieve parallelization. 
 
-Next, in the "Update centroids" section, we iterate through each pixel using a for loop to accumulate numerical values for updating cluster centers. To ensure correctness, we include **reduction** in **#pragma omp** for to handle variable accumulation. 
+Next, in the "Update centroids" section, we iterate through each pixel using a for loop to accumulate numerical values for updating cluster centers. To ensure correctness, we include **reduction** in **#pragma omp for** to handle variable accumulation. 
 
-Finally, in the "Check cluster switching proportion" section, we similarly use **#pragma omp**  for for parallelization and apply **reduction** to handle variable accumulation. 
+Finally, in the "Check cluster switching proportion" section, we similarly use **#pragma omp for** for parallelization and apply **reduction** to handle variable accumulation. 
 
 Through these modifications, we have achieved OpenMP parallelization in all three sections, enhancing the computational efficiency of the K-Means clustering algorithm, particularly suitable for handling large-scale pixel data scenarios.
 
-**Cuda**
+**CUDA**
 
 CUDA parallelization will be performed for two main tasks: classifying points and updating centroids. 
 
-Firstly, to avoid frequent loading of large amounts of image data into the GPU, we combine these two tasks into a single kernel function. 
+Firstly, to avoid the frequent loading of large amounts of image data into the GPU, we combine these two tasks into a single kernel function. 
 
 For the classification of points, each pixel reads cluster centroids to calculate distances, eliminating the possibility of race conditions.
 However, updating centroids involves counting the number of points in each cluster, introducing the potential for race conditions. To address this, I declare the counting variable as **\_\_shared\_\_**, making it private to each thread block, preventing multiple threads from simultaneously accessing the same space. Additionally, I use **atomicAdd()** to make the count write operation atomic, ensuring that only one thread writes to this variable at a time. Finally, **\_\_syncthreads()** is employed to synchronize actions at each stage.
 
-## Experimental Methodolog
+## Experimental Methodology
 **Experimental platform**
 
-Our experiments will be conducted using the workstation provided in class. Table below outlines the specifications of the workstation, including both hardware and software details.
+Our experiments will be conducted using the workstation provided in class. The table below outlines the specifications of the workstation, including both hardware and software details.
 
 |||
 | ------------- | ------ |
@@ -128,7 +133,7 @@ Our experiments will be conducted using the workstation provided in class. Table
 
 **Input image**
 
-The input image for our experiments is Lena, as depicted in Figure below. Throughout the experiments, we will vary the image sizes to 64X64, 128X128, 256X256, and 512X512, conducting different experiments for each size.
+The input image for our experiments is Lena, as depicted in the figure below. Throughout the experiments, we will vary the image sizes to 64X64, 128X128, 256X256, and 512X512, conducting different experiments for each size.
 
 <img  width="256" src="https://i.imgur.com/pXd3T0n.png" title="source: imgur.com" />
 
@@ -160,11 +165,11 @@ The experiment is conducted using an image size of 512X512 and is tested with 4 
 <img width="512" src="https://i.imgur.com/YxZTJMF.png" title="source: imgur.com" />
 
 ## Related Work
-K-Means Clustering is a simple algorithm that reveals the relationship between data. K-Means has two major challenges. First, in order to converge to a set of centroids, the algorithm must traverse each pixel in every iteration to update the centroids. Second, the initial selection of centroids will largely affect the total number of iterations. 
+K-Means Clustering is a simple algorithm that reveals the relationship between data. K-Means has two major challenges. First, to converge to a set of centroids, the algorithm must traverse each pixel in every iteration to update the centroids. Second, the initial selection of centroids will largely affect the total number of iterations. 
 
-Previous work has tried to improve the traversing efficiency by analyzing the data using model selection[2] and the hierarchical structure of k-d tree[3]. These techniques  demonstrate notable speedup on sequential architectures, but the algorithm they used are not suitable for parallelization due to its branching behavior.
+Previous work has tried to improve the traversing efficiency by analyzing the data using model selection[2] and the hierarchical structure of k-d tree[3]. These techniques demonstrate notable speedup on sequential architectures, but the algorithms they used are not suitable for parallelization due to their branching behavior.
 
-As for the initial selection, the main idea in [1] is to select multiple set of initial centroids and pick the best set to use as the initial centroids within few iterations, since this approach evaluate many initial sets at the same time, it can be parallelized easily.
+As for the initial selection, the main idea in [1] is to select multiple sets of initial centroids and pick the best set to use as the initial centroids within few iterations, since this approach evaluates many initial sets at the same time, it can be parallelized easily.
 
 ## Conclusions
 
